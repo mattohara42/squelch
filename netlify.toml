@@ -1,0 +1,16 @@
+# Static site, no build step — publish the repo root as-is.
+[build]
+  publish = "."
+
+# AudioWorklet modules and their imports must serve as JavaScript. Netlify
+# already sets text/javascript for .js; this is belt-and-suspenders so the
+# worklet fetch never gets a wrong Content-Type on a misconfigured host.
+[[headers]]
+  for = "/js/*"
+  [headers.values]
+    Content-Type = "text/javascript; charset=utf-8"
+
+[[headers]]
+  for = "/js/worklets/*"
+  [headers.values]
+    Content-Type = "text/javascript; charset=utf-8"

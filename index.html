@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SQUELCH</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<a class="skip-link" href="#instrument-tabs">Skip to the sequencer</a>
+<h1>SQUELCH</h1>
+
+<header class="transport" role="region" aria-label="Transport">
+  <div class="row">
+    <button id="play" class="run-btn" aria-pressed="false">RUN</button>
+    <button id="undo" disabled>Undo</button>
+    <button id="export">Export</button>
+    <button id="import">Import</button>
+    <button id="learn">Learn</button>
+    <input type="file" id="importFile" accept=".json,application/json" hidden aria-hidden="true">
+  </div>
+  <div class="row"><label for="tempo">Tempo</label><input type="range" id="tempo" step="1" aria-label="Tempo, beats per minute"><span class="val" id="tempoVal" aria-hidden="true"></span></div>
+  <div class="row"><label for="shuffle">Shuffle</label><input type="range" id="shuffle" min="0" max="1" step="0.01" value="0" aria-label="Shuffle amount"><span class="val" id="shuffleVal" aria-hidden="true">0</span></div>
+  <div class="row view-toggle" role="group" aria-label="Playback mode">
+    <button id="viewPattern" class="active" aria-pressed="true">Pattern</button>
+    <button id="viewSong" aria-pressed="false">Song</button>
+  </div>
+  <div id="status" role="status" aria-live="polite">not started</div>
+</header>
+
+<main>
+  <div id="instrument-tabs"></div>
+  <div id="machines"></div>
+  <div id="song"></div>
+  <div id="mixer"></div>
+</main>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

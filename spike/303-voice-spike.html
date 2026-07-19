@@ -1,0 +1,137 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>SQUELCH — M0 303 voice spike</title>
+<style>
+  body { font-family: -apple-system, sans-serif; background: #222; color: #eee; padding: 24px; }
+  h1 { font-size: 16px; font-weight: 600; }
+  .row { display: flex; align-items: center; gap: 12px; margin: 8px 0; }
+  label { width: 90px; font-size: 13px; }
+  input[type=range] { width: 220px; }
+  .val { width: 60px; font-variant-numeric: tabular-nums; font-size: 12px; color: #9c9; }
+  button { background: #444; color: #eee; border: 1px solid #666; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+  button:hover { background: #555; }
+  #status { color: #999; font-size: 12px; margin-top: 12px; }
+</style>
+</head>
+<body>
+<h1>SQUELCH — M0 303 voice spike</h1>
+
+<div class="row">
+  <button id="start">Start audio</button>
+  <button id="playNote">Play note (C2)</button>
+  <button id="playRiff">Play demo riff</button>
+  <label><input type="checkbox" id="accentNext"> accent next</label>
+  <label><input type="checkbox" id="slideNext"> slide next</label>
+</div>
+
+<div class="row"><label>Waveform</label>
+  <select id="waveform"><option value="saw">saw</option><option value="square">square</option></select>
+</div>
+<div class="row"><label>Tuning</label><input type="range" id="tuning" min="-24" max="24" step="1" value="0"><span class="val" id="tuningVal"></span></div>
+<div class="row"><label>Cutoff</label><input type="range" id="cutoff" min="100" max="4000" step="1" value="500"><span class="val" id="cutoffVal"></span></div>
+<div class="row"><label>Resonance</label><input type="range" id="resonance" min="0" max="1" step="0.01" value="0.5"><span class="val" id="resonanceVal"></span></div>
+<div class="row"><label>Env Mod</label><input type="range" id="envMod" min="0" max="1" step="0.01" value="0.5"><span class="val" id="envModVal"></span></div>
+<div class="row"><label>Decay</label><input type="range" id="decay" min="200" max="2000" step="10" value="400"><span class="val" id="decayVal"></span></div>
+<div class="row"><label>Accent</label><input type="range" id="accent" min="0" max="1" step="0.01" value="0.7"><span class="val" id="accentVal"></span></div>
+<div class="row"><label>Volume</label><input type="range" id="volume" min="0" max="1" step="0.01" value="0.8"><span class="val" id="volumeVal"></span></div>
+<div class="row"><label>Tempo</label><input type="range" id="tempo" min="60" max="180" step="1" value="130"><span class="val" id="tempoVal"></span></div>
+
+<div id="status">not started</div>
+
+<script>
+let ctx, node;
+let riffTimer = null;
+
+// Classic-shaped acid riff: note (MIDI), gate, accent, slide-into-next.
+// Root A1 (33) with octave jumps and a couple of slides/accents to hear
+// the "wow" and glide by ear.
+const RIFF = [
+  { n: 33, g: 1, a: 0, s: 0 }, { n: 33, g: 1, a: 0, s: 1 },
+  { n: 45, g: 1, a: 1, s: 0 }, { n: 33, g: 0, a: 0, s: 0 },
+  { n: 33, g: 1, a: 0, s: 0 }, { n: 36, g: 1, a: 0, s: 1 },
+  { n: 33, g: 1, a: 1, s: 0 }, { n: 33, g: 0, a: 0, s: 0 },
+  { n: 33, g: 1, a: 0, s: 0 }, { n: 33, g: 1, a: 0, s: 0 },
+  { n: 45, g: 1, a: 0, s: 1 }, { n: 45, g: 1, a: 1, s: 0 },
+  { n: 33, g: 1, a: 0, s: 0 }, { n: 40, g: 1, a: 0, s: 0 },
+  { n: 36, g: 1, a: 1, s: 1 }, { n: 33, g: 1, a: 0, s: 0 },
+];
+
+async function start() {
+  if (ctx) return;
+  ctx = new AudioContext();
+  await ctx.audioWorklet.addModule('voice303-processor.js');
+  node = new AudioWorkletNode(ctx, 'voice303', { numberOfInputs: 0, numberOfOutputs: 1, outputChannelCount: [1] });
+  node.connect(ctx.destination);
+  document.getElementById('status').textContent = 'audio running';
+  wireKnobs();
+}
+
+function wireKnobs() {
+  const bind = (id) => {
+    const el = document.getElementById(id);
+    const valEl = document.getElementById(id + 'Val');
+    const update = () => {
+      if (valEl) valEl.textContent = el.value;
+      if (node.parameters.has(id)) node.parameters.get(id).value = parseFloat(el.value);
+    };
+    el.addEventListener('input', update);
+    update();
+  };
+  ['tuning', 'cutoff', 'resonance', 'envMod', 'decay', 'accent', 'volume'].forEach(bind);
+  document.getElementById('tempoVal').textContent = document.getElementById('tempo').value;
+  document.getElementById('tempo').addEventListener('input', (e) => {
+    document.getElementById('tempoVal').textContent = e.target.value;
+  });
+  document.getElementById('waveform').addEventListener('change', (e) => {
+    node.port.postMessage({ type: 'waveform', value: e.target.value });
+  });
+}
+
+function playNote(note, accent, slide) {
+  node.port.postMessage({ type: 'note', note, gate: true, accent, slide });
+  setTimeout(() => node.port.postMessage({ type: 'note', gate: false }), 200);
+}
+
+document.getElementById('start').addEventListener('click', start);
+
+document.getElementById('playNote').addEventListener('click', () => {
+  if (!node) return;
+  const accent = document.getElementById('accentNext').checked;
+  const slide = document.getElementById('slideNext').checked;
+  playNote(36, accent, slide);
+});
+
+document.getElementById('playRiff').addEventListener('click', () => {
+  if (!node) return;
+  if (riffTimer) {
+    clearTimeout(riffTimer);
+    riffTimer = null;
+    node.port.postMessage({ type: 'note', gate: false });
+    document.getElementById('playRiff').textContent = 'Play demo riff';
+    return;
+  }
+  document.getElementById('playRiff').textContent = 'Stop demo riff';
+  let i = 0;
+  const stepDur = () => 60000 / parseFloat(document.getElementById('tempo').value) / 4;
+  const tick = () => {
+    const step = RIFF[i % RIFF.length];
+    if (step.g) {
+      node.port.postMessage({ type: 'note', note: step.n, gate: true, accent: !!step.a, slide: !!step.s });
+    } else {
+      node.port.postMessage({ type: 'note', gate: false });
+    }
+    // Gate off shortly before next step, unless sliding into it.
+    const next = RIFF[(i + 1) % RIFF.length];
+    if (step.g && !(next && step.s)) {
+      setTimeout(() => node.port.postMessage({ type: 'note', gate: false }), stepDur() * 0.6);
+    }
+    i++;
+    riffTimer = setTimeout(tick, stepDur());
+  };
+  tick();
+});
+</script>
+</body>
+</html>
