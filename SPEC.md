@@ -58,6 +58,9 @@ CH/OH/CC/RC only.
   steps: 2/3/4/6/8, feedback, level) → **Compressor** (master glue, simple
   threshold/amount) → master volume.
 - PCF (pattern-controlled filter): **backlog**, not v1.
+- *(post-M8)* Mixer state — per-channel level + dist/delay sends + mute, and the
+  shared FX settings — is persisted in `state.mixer` and carried by full-rig
+  demos. Send routing is exclusive with dry per channel (see CLAUDE.md M5 note).
 
 ## Sequencing
 
@@ -84,9 +87,16 @@ CH/OH/CC/RC only.
 
 // song — ordered rows; per-machine pattern refs so drums can swap mid-song
 { rows: [ { pats: { '303a':id, '303b':id, '808':id, '909':id|null },
-            repeat: 2 } ] }
+            repeat: 2 } ],
+  loop: true }
 
-// persistence: localStorage autosave + JSON file export/import
+// mixer (post-M8) — a separate persisted slice, NOT part of the pattern schema
+{ channels: { '303a': { level, dist, delay, mute }, … },
+  dist: { amount, blend }, delay: { steps, feedback, level },
+  comp: { threshold, amount }, master: { volume } }
+
+// persistence: localStorage autosave + JSON file export/import. Full state:
+//   { version, tempo, shuffle, patterns, active, patches, mixer, song }
 ```
 
 ## Workflow modernizations (the kid layer)
@@ -95,6 +105,9 @@ CH/OH/CC/RC only.
    ACC/SLD dots per step (spike UI, refined).
 2. Always-on playhead LEDs on every machine.
 3. Preset patterns shipped in every machine — mutation beats blank-page.
+   *(post-M8)* Extended to one-click full-rig **Demos** (whole genre tracks:
+   tempo + all four machines + sounds + mixer + song) and a **New Rig** blank
+   slate, with a "click to add" hint on empty grids.
 4. Undo (single global history stack over pattern/song edits).
 5. Knob cause-and-effect glow: a knob subtly glows while the sound it shapes
    is playing.
