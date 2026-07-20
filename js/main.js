@@ -6,6 +6,7 @@ import { LANE_ORDER_808, LANE_LABELS_808, LANE_KNOBS_808 } from './presetsDrum.j
 import { LANE_ORDER_909, LANE_LABELS_909, LANE_KNOBS_909 } from './presetsDrum909.js';
 import { createMixerPanel } from './panelMixer.js';
 import { createStore } from './store.js';
+import { DEMO_LIBRARY, buildDemoState, buildBlankState } from './demoLibrary.js';
 import { createPatternBar } from './patternBar.js';
 import { createSongPanel } from './panelSong.js';
 import { createSongConductor } from './songConductor.js';
@@ -93,6 +94,18 @@ function makeBlankPattern(def) {
 
 const updateUndoButton = () => { document.getElementById('undo').disabled = !store.canUndo(); };
 const editWithUndo = (fn) => { store.edit(fn); updateUndoButton(); };
+
+// Replace the whole rig (load a demo, or the blank slate) and refresh the UI —
+// same refresh path as undo/import. Stops the transport so playback restarts
+// cleanly against the new patterns, and snaps back to the first instrument tab.
+function loadRigState(newState) {
+  stopTransport();
+  store.loadRig(newState);
+  activeTab = MACHINE_DEFS[0].key;
+  updateUndoButton();
+  applyTransportUI();
+  if (ctx) buildConsole();
+}
 
 // Console: one instrument on screen at a time, chosen by the tab bar. ALL
 // instrument editors are built and registered (so every machine keeps
@@ -378,6 +391,30 @@ function wireTransport() {
 
   document.getElementById('viewPattern').addEventListener('click', () => setView('pattern'));
   document.getElementById('viewSong').addEventListener('click', () => setView('song'));
+
+  // Full-rig Demos: load a whole track. Snaps the select back to its
+  // placeholder after loading (it's an action, not a persistent selection).
+  const demoSelect = document.getElementById('demos');
+  DEMO_LIBRARY.forEach((d, i) => {
+    const opt = document.createElement('option');
+    opt.value = String(i);
+    opt.textContent = d.name;
+    demoSelect.appendChild(opt);
+  });
+  demoSelect.addEventListener('change', () => {
+    const idx = demoSelect.value;
+    demoSelect.value = '';
+    if (idx === '') return;
+    const demo = DEMO_LIBRARY[parseInt(idx, 10)];
+    if (!window.confirm(`Load the “${demo.name}” demo? This replaces your current rig.`)) return;
+    loadRigState(buildDemoState(demo));
+  });
+
+  // New Rig: one-click blank slate across all four machines.
+  document.getElementById('newRig').addEventListener('click', () => {
+    if (!window.confirm('Start a blank rig? This clears all your patterns.')) return;
+    loadRigState(buildBlankState());
+  });
 
   // Keyboard shortcuts. Ignore while typing in a field so pattern renaming and
   // repeat entry aren't hijacked.

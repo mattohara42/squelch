@@ -151,6 +151,24 @@ See SPEC.md (design, locked), BUILD_PLAN.md (milestones), BACKLOG.md (deferred).
   transcriptions). presetLibrary entries are now { name, create() ->
   { pattern, patch } }; patternBar applies patch via setNoUndo (performance
   gesture) alongside the undoable pattern add.
+- (Post-M8) Full-rig Demos + blank slate + clearer pattern workflow (user
+  feedback: "not clear how you create/save/clone a pattern; hard to get a blank
+  slate; demos should be full genre tracks, not per-machine snippets"). New
+  js/demoLibrary.js (pure, tested) defines full-track demos — each bundles
+  tempo + shuffle + one pattern per machine + matched 303 patches + a 4-section
+  song arrangement (intro drums / bass in / full / 303-only break, via null
+  song refs). Lineup: Detroit House (124), Classic Hip Hop (90, shuffle), Acid
+  Techno (135), Electro/Miami Bass (110). buildDemoState() and buildBlankState()
+  return complete valid store states; store.loadRig() replaces the whole rig
+  (undoable like import). A fresh profile now SEEDS from DEMO_LIBRARY[0] (was
+  per-machine PRESET_* snippets) so first run opens on a coherent starter track;
+  "New Rig" button is the one-click blank slate. Transport gains a Demo picker +
+  New Rig (both confirm before replacing work). Per-machine Presets kept as
+  building blocks. Pattern bar relabeled (PATTERN | … | LOAD groups, divider)
+  with New/Duplicate/rename tooltips; Learn tutorial updated. Note: demo
+  patterns are written by ear-model only — still need a Mac-mini ear-test pass
+  (the final gate) to tune groove/mix; data validity is harness-tested
+  (test/demoLibrary.test.js).
 - (Post-M8) Mixer send routing made legible: the per-channel Dist/Delay LEDs
   are the sends into the shared Distortion/Delay FX boxes, but nothing showed
   that. Fixed presentation-only — two accent tokens (--fx-dist orange,

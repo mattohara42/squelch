@@ -14,8 +14,14 @@
   <div class="row">
     <button id="play" class="run-btn" aria-pressed="false">RUN</button>
     <button id="undo" disabled>Undo</button>
-    <button id="export">Export</button>
-    <button id="import">Import</button>
+    <label class="demo-pick">Demo
+      <select id="demos" aria-label="Load a full demo track" title="Load a whole track — tempo, all four machines, and a song arrangement">
+        <option value="">Load…</option>
+      </select>
+    </label>
+    <button id="newRig" title="Clear everything and start from a blank rig">New Rig</button>
+    <button id="export" title="Save your rig to a file">Export</button>
+    <button id="import" title="Load a rig from a file">Import</button>
     <button id="learn">Learn</button>
     <input type="file" id="importFile" accept=".json,application/json" hidden aria-hidden="true">
   </div>

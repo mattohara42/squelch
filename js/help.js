@@ -6,12 +6,14 @@ const TUTORIAL = `
   <p class="help-lead">Make your first beat in about a minute — press RUN and start clicking.</p>
   <ol class="help-steps">
     <li><b>Start it.</b> Press <span class="kbd">RUN</span> (or the <span class="kbd">Space</span> bar) to play the pattern on a loop. Press again to stop.</li>
+    <li><b>Or start from a demo.</b> The <b>Demo</b> menu (top left) loads a whole track — tempo, all four machines, and a song arrangement — in genres like Detroit House and Classic Hip Hop. Great for hearing the rig, then tweaking. Want a clean canvas instead? <b>New Rig</b> blanks everything in one click.</li>
     <li><b>Pick an instrument.</b> Use the tabs: <b>303-A</b> and <b>303-B</b> are bass synths; <b>808</b> and <b>909</b> are drum machines. They all keep playing — the tab just chooses what you're editing.</li>
     <li><b>Program drums.</b> On 808 or 909, click the squares to add hits. Each row is a drum — Kick, Snare, Closed Hat… Click a drum's <b>name</b> to tweak its sound (Level, Tone, Decay) on the right. The small <b>A</b> in a square makes that hit an accent (louder).</li>
     <li><b>Program bass.</b> On a 303, the grid is a mini piano — rows are pitches (keyboard on the left), columns are steps. Click to place a note; click it again for a rest. Use <b>▼/▲</b> under a step to move a note down or up an octave. <b>A</b> = accent, <b>S</b> = slide — slide glides into the next note, the secret behind the classic "acid" sound.</li>
     <li><b>Get squelchy.</b> On the 303's right-hand panel, turn up <b>Cutoff</b> and <b>Resonance</b> while it plays — that's the sound the TB-303 is famous for. <b>Reset Knobs</b> returns to a clean tone.</li>
     <li><b>Mix and mangle.</b> The Mixer at the bottom sets each machine's Level and can route it through <b>Distortion</b> and <b>Delay</b>; the shared knobs shape those effects. Flip a channel's <b>Dist</b> or <b>Delay</b> light on and listen.</li>
-    <li><b>Build a track.</b> Your work saves automatically. Make more patterns with <b>New</b>, <b>Duplicate</b>, or <b>Presets…</b>, then switch to <b>Song</b> mode (top right) to chain patterns into a full arrangement.</li>
+    <li><b>Make patterns.</b> Each machine keeps a list of named patterns. <b>New</b> adds a fresh empty one; <b>Duplicate</b> clones the current one so you can vary it; type in the name box to rename it; the <b>Pattern</b> menu switches between them. <b>Load ▸ Preset</b> drops in a ready-made pattern for that one machine.</li>
+    <li><b>Arrange a song.</b> Your work saves automatically. Switch to <b>Song</b> mode (top right) and chain your patterns row by row — pick which pattern each machine plays per section, set how many bars it repeats, and loop the whole thing.</li>
   </ol>
   <p class="help-note">Keyboard: <span class="kbd">Space</span> play/stop, <span class="kbd">⌘/Ctrl</span>+<span class="kbd">Z</span> undo. Every control is keyboard-operable — Tab to it, then use the arrow keys.</p>
 `;

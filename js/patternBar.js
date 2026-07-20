@@ -36,15 +36,19 @@ export function createPatternBar(container, { store, machineKey, makeBlank, onSt
   nameInput.className = 'pat-name';
   nameInput.type = 'text';
   nameInput.value = active.name;
+  nameInput.placeholder = 'Pattern name';
+  nameInput.title = 'Rename this pattern';
   nameInput.setAttribute('aria-label', 'Pattern name');
   bar.appendChild(nameInput);
 
   const newBtn = document.createElement('button');
   newBtn.textContent = 'New';
+  newBtn.title = 'Add a new empty pattern for this machine';
   bar.appendChild(newBtn);
 
   const dupBtn = document.createElement('button');
   dupBtn.textContent = 'Duplicate';
+  dupBtn.title = 'Clone this pattern into a new one you can edit';
   bar.appendChild(dupBtn);
 
   // Presets loader: a select that appends the chosen library pattern as a new
