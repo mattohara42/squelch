@@ -54,6 +54,13 @@ h1::before { content: "▶ "; color: #ff5a3c; font-size: 20px; }
 }
 .transport .row { margin: 0; display: flex; align-items: center; gap: 10px; }
 .transport label { width: auto; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-dim); }
+/* Full-rig Demo picker in the transport. */
+.demo-pick { display: inline-flex; align-items: center; gap: 6px; }
+.demo-pick select {
+  background: var(--slot); color: var(--ink); border: 1px solid #000; border-radius: 6px;
+  padding: 6px 8px; font-size: 12px; text-transform: none; letter-spacing: normal;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.6);
+}
 
 button {
   background: linear-gradient(#4a4a52, #34343a);
@@ -171,6 +178,9 @@ input[type=range]::-moz-range-thumb {
 }
 .pattern-bar .pat-name { width: 130px; }
 .pattern-bar .pat-select { border-left: 3px solid var(--accent); }
+/* Mini section labels so the two selects don't read as duplicates. */
+.pat-bar-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--ink-dim); }
+.pat-bar-divider { width: 1px; align-self: stretch; margin: 2px 4px; background: rgba(255,255,255,0.12); }
 
 /* ---- Inspector (shared by 303 + drums) ---- */
 .insp-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-bottom: 10px; margin-bottom: 10px; border-bottom: 2px solid var(--accent); }
@@ -293,7 +303,13 @@ input[type=range]::-moz-range-thumb {
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 3px 8px rgba(0,0,0,0.4);
 }
 .mixer-channel-label { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; color: var(--ink); }
-.mixer-toggles { display: flex; gap: 12px; margin-top: 4px; }
+/* Keep every channel's sends inside its own 112px box, aligned under it:
+   Dist | Delay on the top row, Mute spanning the row below. */
+.mixer-toggles {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px 4px;
+  width: 100%; margin-top: 8px; justify-items: center;
+}
+.mixer-toggles .mute-led { grid-column: 1 / -1; }
 
 .mixer-fx { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; }
 .mixer-fx-section {
@@ -376,7 +392,15 @@ input[type=range]::-moz-range-thumb {
 .fader-label { font-size: 10px; letter-spacing: 0.04em; color: var(--ink-dim); text-transform: uppercase; }
 
 /* LED toggle. */
-.led-toggle { display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; user-select: none; }
+.led-toggle {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  cursor: pointer; user-select: none;
+  /* It's a <button>: strip the generic button chrome so it reads as a bare LED
+     and doesn't inherit padding: 7px 14px (which bloated the toggle row past
+     the channel width and made adjacent channels' sends collide). */
+  background: none; border: none; box-shadow: none; padding: 2px 0;
+  -webkit-appearance: none; appearance: none; font: inherit;
+}
 .led-toggle .led {
   width: 14px; height: 14px; border-radius: 50%;
   background: #3a1010; border: 1px solid #0a0404;

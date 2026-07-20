@@ -8,21 +8,14 @@
 // tempo/shuffle go through setNoUndo: they're performance gestures, not
 // edits, and undoing a step toggle shouldn't yank the filter knob back.
 import { CFG } from './config.js';
-import { PRESET_303A, PRESET_303B } from './presets303.js';
-import { PRESET_808 } from './presetsDrum.js';
-import { PRESET_909 } from './presetsDrum909.js';
+import { DEMO_LIBRARY, buildDemoState } from './demoLibrary.js';
 
 export const MACHINE_KEYS = ['303a', '303b', '808', '909'];
 
+// A brand-new profile opens on a full starter demo (immediate music), rather
+// than a blank rig — the "New Rig" button is the one-click path to blank.
 function seedState() {
-  const presets = { '303a': PRESET_303A, '303b': PRESET_303B, '808': PRESET_808, '909': PRESET_909 };
-  const state = { version: 1, tempo: CFG.TEMPO_DEFAULT_BPM, shuffle: 0, patterns: {}, active: {}, patches: {} };
-  for (const k of MACHINE_KEYS) {
-    const p = structuredClone(presets[k]);
-    state.patterns[k] = [p];
-    state.active[k] = p.id;
-  }
-  return state;
+  return buildDemoState(DEMO_LIBRARY[0]);
 }
 
 function validate(s) {
@@ -95,6 +88,16 @@ export function createStore(storage) {
       if (!validate(parsed)) throw new Error('not a SQUELCH pattern file');
       pushUndo();
       state = normalize(parsed);
+      save();
+    },
+    // Replace the whole rig (load a full demo, or the blank slate). Undoable
+    // like import — undo restores the previous patterns/active/song (tempo and
+    // patches follow import's semantics: they stay at the loaded values).
+    loadRig(newState) {
+      const norm = normalize(structuredClone(newState));
+      if (!validate(norm)) throw new Error('invalid rig state');
+      pushUndo();
+      state = norm;
       save();
     },
   };

@@ -9,6 +9,16 @@ export function createPatternBar(container, { store, machineKey, makeBlank, onSt
   bar.className = 'pattern-bar';
   container.appendChild(bar);
 
+  const mkLabel = (text) => {
+    const l = document.createElement('span');
+    l.className = 'pat-bar-label';
+    l.textContent = text;
+    l.setAttribute('aria-hidden', 'true'); // decorative; controls carry their own aria-label
+    return l;
+  };
+
+  bar.appendChild(mkLabel('Pattern'));
+
   const select = document.createElement('select');
   select.className = 'pat-select';
   select.setAttribute('aria-label', 'Active pattern');
@@ -26,25 +36,38 @@ export function createPatternBar(container, { store, machineKey, makeBlank, onSt
   nameInput.className = 'pat-name';
   nameInput.type = 'text';
   nameInput.value = active.name;
+  nameInput.placeholder = 'Pattern name';
+  nameInput.title = 'Rename this pattern';
   nameInput.setAttribute('aria-label', 'Pattern name');
   bar.appendChild(nameInput);
 
   const newBtn = document.createElement('button');
   newBtn.textContent = 'New';
+  newBtn.title = 'Add a new empty pattern for this machine';
   bar.appendChild(newBtn);
 
   const dupBtn = document.createElement('button');
   dupBtn.textContent = 'Duplicate';
+  dupBtn.title = 'Clone this pattern into a new one you can edit';
   bar.appendChild(dupBtn);
 
   // Presets loader: a select that appends the chosen library pattern as a new
-  // active pattern, then snaps back to its placeholder label.
+  // active pattern, then snaps back to its placeholder label. A divider + label
+  // separate it from the active-pattern controls so the two selects don't read
+  // as duplicates: left = switch between YOUR patterns, right = LOAD a factory
+  // one into a new slot.
+  const divider = document.createElement('span');
+  divider.className = 'pat-bar-divider';
+  divider.setAttribute('aria-hidden', 'true');
+  bar.appendChild(divider);
+  bar.appendChild(mkLabel('Load'));
+
   const presetSelect = document.createElement('select');
   presetSelect.className = 'pat-preset';
   presetSelect.setAttribute('aria-label', 'Load a preset pattern');
   const placeholder = document.createElement('option');
   placeholder.value = '';
-  placeholder.textContent = 'Presets…';
+  placeholder.textContent = 'Preset…';
   presetSelect.appendChild(placeholder);
   (PRESET_LIBRARY[machineKey] || []).forEach((entry, i) => {
     const opt = document.createElement('option');
