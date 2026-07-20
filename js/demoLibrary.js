@@ -90,7 +90,7 @@ export const DEMO_LIBRARY = [
           bd: { h: [0, 4, 8, 12], a: [0, 8] }, cp: { h: [4, 12] },
           oh: { h: [2, 6, 10, 14] }, ch: { h: [0, 4, 8, 12] },
         }),
-        '808': beat('808', 'Rim Ticks', { rs: { h: [3, 7, 11, 15] } }),
+        '808': beat('808', 'Shaker & Bell', { ma: { h: [1, 3, 5, 7, 9, 11, 13, 15] }, cb: { h: [6, 14] }, rs: { h: [3, 11] } }),
       },
       patches: {
         '303a': { waveform: 'square', tuning: 0, cutoff: 520, resonance: 0.5, envMod: 0.45, decay: 320, accent: 0.7, volume: 0.88 },
@@ -121,7 +121,7 @@ export const DEMO_LIBRARY = [
           bd: { h: [0, 10], a: [0] }, sd: { h: [4, 12], a: [4, 12] },
           ch: { h: [0, 2, 4, 6, 8, 10, 12, 14], a: [0, 8] }, oh: { h: [7] },
         }),
-        '909': beat('909', 'Ghost Hats', { ch: { h: [3, 11] } }),
+        '909': beat('909', 'Swing Ride', { rc: { h: [2, 6, 10, 14] }, rs: { h: [7] } }),
       },
       patches: {
         '303a': { waveform: 'square', tuning: -12, cutoff: 260, resonance: 0.35, envMod: 0.3, decay: 900, accent: 0.5, volume: 0.9 },
@@ -152,7 +152,7 @@ export const DEMO_LIBRARY = [
           bd: { h: [0, 4, 8, 12], a: [0, 4, 8, 12] }, cp: { h: [4, 12] },
           oh: { h: [2, 6, 10, 14] }, ch: { h: [0, 2, 4, 6, 8, 10, 12, 14] }, cc: { h: [0] },
         }),
-        '808': beat('808', 'Rim Layer', { rs: { h: [2, 6, 10, 14] } }),
+        '808': beat('808', 'Rumble Perc', { ma: { h: [1, 3, 5, 7, 9, 11, 13, 15] }, rs: { h: [6, 14] } }),
       },
       patches: {
         '303a': { waveform: 'saw', tuning: 0, cutoff: 1600, resonance: 0.92, envMod: 0.88, decay: 280, accent: 0.95, volume: 0.8 },
@@ -183,7 +183,7 @@ export const DEMO_LIBRARY = [
           bd: { h: [0, 3, 6, 8, 11, 14], a: [0, 8] }, cp: { h: [4, 12] },
           cb: { h: [2, 10] }, oh: { h: [7] }, ch: { h: [0, 2, 4, 6, 8, 10, 12, 14] },
         }),
-        '909': beat('909', 'Rim Layer', { rs: { h: [7, 15] } }),
+        '909': beat('909', 'Crash & Ride', { cc: { h: [0] }, cp: { h: [4, 12] }, rc: { h: [2, 6, 10, 14] } }),
       },
       patches: {
         '303a': { waveform: 'square', tuning: 0, cutoff: 560, resonance: 0.55, envMod: 0.5, decay: 300, accent: 0.7, volume: 0.88 },

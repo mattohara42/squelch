@@ -219,6 +219,17 @@ export function createVoice303Panel(container, { label, node, pattern, patch = {
 
   for (let c = 0; c < STEPS; c++) renderStep(c);
 
+  // Empty-pattern nudge: a one-time hint over the grid until the first click,
+  // so a fresh/blank pattern tells you what to do (removed on first interaction).
+  if (pattern.steps.every((s) => !s.g)) {
+    const hint = document.createElement('div');
+    hint.className = 'grid-hint';
+    hint.textContent = 'Click a cell to place a note';
+    hint.setAttribute('aria-hidden', 'true');
+    seqCol.appendChild(hint);
+    seqCol.addEventListener('pointerdown', () => hint.remove(), { once: true });
+  }
+
   // Keyboard: arrow-key roving across the grid, with per-column shortcuts.
   const rows = Array.from({ length: 12 }, (_, i) => colCells.map((col) => col[11 - i]));
   rovingGrid(rows, {

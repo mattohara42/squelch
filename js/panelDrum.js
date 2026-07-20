@@ -117,6 +117,17 @@ export function createDrumPanel(container, { label, node, pattern, now, laneOrde
   rovingGrid(laneOrder.map((lane) => cellsByLane[lane]));
   renderLaneInspector();
 
+  // Empty-pattern nudge: a one-time hint over the grid until the first click,
+  // so a fresh/blank kit tells you what to do (removed on first interaction).
+  if (laneOrder.every((l) => pattern.lanes[l].every((s) => !s.h))) {
+    const hint = document.createElement('div');
+    hint.className = 'grid-hint';
+    hint.textContent = 'Click the pads to add a beat';
+    hint.setAttribute('aria-hidden', 'true');
+    seqCol.appendChild(hint);
+    seqCol.addEventListener('pointerdown', () => hint.remove(), { once: true });
+  }
+
   const pendingHighlights = [];
   return {
     pattern,
