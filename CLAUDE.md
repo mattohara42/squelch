@@ -169,6 +169,25 @@ See SPEC.md (design, locked), BUILD_PLAN.md (milestones), BACKLOG.md (deferred).
   patterns are written by ear-model only — still need a Mac-mini ear-test pass
   (the final gate) to tune groove/mix; data validity is harness-tested
   (test/demoLibrary.test.js).
+- (Post-M8) Mixer state now PERSISTED + carried by demos (supersedes the M6
+  "mixer state excluded" note for this purpose). New js/mixerState.js
+  (defaultMixerState/mergeMixerState, pure/tested) defines the slice: per-channel
+  level + dist/delay sends + mute, plus shared dist/delay/comp/master. Stored in
+  state.mixer (normalize backfills old saves). panelMixer reads initial values
+  from the slice and APPLIES them to the audio graph on build (so a loaded
+  demo's sends/levels are audible immediately) and persists every change via
+  setNoUndo (perf gesture, like knobs). The panel is rebuilt (buildMixer) from
+  the store on rig swaps; audio nodes still built once. Each demo carries a
+  `mixer` overlay = its sonic touches (e.g. Acid Techno sends 303-A through
+  dist→delay; Detroit House delays the stab). Undo redesign: undo entries now
+  snapshot a per-op key set — incremental edits still snapshot only
+  patterns/active/song (M6 rule intact), but a whole-rig swap (loadRig/import)
+  snapshots RIG_KEYS (adds tempo/shuffle/patches/mixer) so ONE Undo restores the
+  entire prior rig. Because rig loads are fully undoable, the native confirm()
+  on demo/New-Rig was dropped; demo-load now switches to Song view + autoplays
+  (deliberate gesture) and announces via the status live region; New Rig lands
+  in Pattern view, stopped. Dead PRESET_303A/B/808/909 snippets removed (seed
+  comes from the demo library now); their files keep the lane/noteName exports.
 - (Post-M8) Mixer send routing made legible: the per-channel Dist/Delay LEDs
   are the sends into the shared Distortion/Delay FX boxes, but nothing showed
   that. Fixed presentation-only — two accent tokens (--fx-dist orange,

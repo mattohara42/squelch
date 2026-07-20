@@ -29,6 +29,21 @@ function stopTransport() {
   }
 }
 
+// Start playback (unlocking audio on first use). Shared by the RUN button and
+// demo-load autoplay. Safe to call when already playing.
+async function startTransport() {
+  await initPromise; // in case it's hit while worklet modules are still loading
+  if (ctx.state === 'suspended') await ctx.resume(); // first gesture unlocks audio
+  dismissNudge();
+  if (scheduler && !scheduler.playing) {
+    scheduler.start();
+    const p = document.getElementById('play');
+    p.textContent = 'STOP';
+    p.setAttribute('aria-pressed', 'true');
+    document.getElementById('status').textContent = 'running';
+  }
+}
+
 // First-run "press RUN" nudge — shows once (per browser profile) until the
 // user first hits play, then never again.
 const NUDGE_KEY = 'squelch-seen-v1';
@@ -98,13 +113,32 @@ const editWithUndo = (fn) => { store.edit(fn); updateUndoButton(); };
 // Replace the whole rig (load a demo, or the blank slate) and refresh the UI —
 // same refresh path as undo/import. Stops the transport so playback restarts
 // cleanly against the new patterns, and snaps back to the first instrument tab.
+// No confirm dialog: a whole-rig load is one Undo away from your previous rig
+// (tempo, patches, mixer and all — see store RIG_KEYS).
 function loadRigState(newState) {
   stopTransport();
   store.loadRig(newState);
   activeTab = MACHINE_DEFS[0].key;
   updateUndoButton();
   applyTransportUI();
-  if (ctx) buildConsole();
+  if (ctx) { buildConsole(); buildMixer(); }
+}
+
+// Load a full demo: swap the rig, reveal its arrangement (Song view), announce
+// it, and start playing — picking a demo is a deliberate gesture, so it plays.
+async function loadDemo(demo) {
+  loadRigState(buildDemoState(demo));
+  if (playMode !== 'song') setView('song');
+  document.getElementById('status').textContent = `Loaded ${demo.name} — press Undo to go back`;
+  await startTransport();
+}
+
+// New Rig: one-click blank slate. Lands you in Pattern view, stopped, ready to
+// build. Undoable like any rig load.
+function newRig() {
+  loadRigState(buildBlankState());
+  if (playMode !== 'pattern') setView('pattern');
+  document.getElementById('status').textContent = 'Blank rig — build something (Undo to restore)';
 }
 
 // Console: one instrument on screen at a time, chosen by the tab bar. ALL
@@ -199,6 +233,24 @@ function buildConsole() {
 
   buildSong();
   applyView();
+}
+
+// Rebuilt (not just re-applied) whenever the rig is replaced — the panel reads
+// the store's mixer slice and applies it to the surviving audio graph, so a
+// loaded demo's sends/levels take effect and the controls show the right state.
+function buildMixer() {
+  const el = document.getElementById('mixer');
+  el.innerHTML = '';
+  const fx = rig.fx;
+  mixerPanel = createMixerPanel(el, {
+    machines: rig.mixChannels,
+    distStages: [fx.distSolo, fx.distToDelay],
+    delayNode: fx.delayNode, delayFeedback: fx.delayFeedback, delayWet: fx.delayWet,
+    glueCompressor: fx.glueCompressor, masterGain: fx.masterGain,
+    getBpm: () => scheduler.bpm,
+    mixerState: store.getState().mixer,
+    persist: (fn) => store.setNoUndo((s) => fn(s.mixer)),
+  });
 }
 
 function buildSong() {
@@ -344,19 +396,16 @@ async function initAudio() {
   for (const def of MACHINE_DEFS) {
     const muteGain = ctx.createGain();
     rig.nodes[def.key].connect(muteGain);
-    mixChannels.push({ label: def.label, ...createMixChannel(muteGain, fxBus) });
+    mixChannels.push({ key: def.key, label: def.label, ...createMixChannel(muteGain, fxBus) });
   }
+  // Stash channels + FX nodes so buildMixer() can rebuild the panel against the
+  // same (once-created) audio graph when the rig is replaced.
+  rig.mixChannels = mixChannels;
+  rig.fx = { distSolo, distToDelay, delayNode, delayFeedback, delayWet, glueCompressor, masterGain };
 
   scheduler = new Scheduler(() => ctx.currentTime);
   buildConsole();
-
-  mixerPanel = createMixerPanel(document.getElementById('mixer'), {
-    machines: mixChannels,
-    distStages: [distSolo, distToDelay],
-    delayNode, delayFeedback, delayWet,
-    glueCompressor, masterGain,
-    getBpm: () => scheduler.bpm,
-  });
+  buildMixer();
 
   applyTransportUI();
   document.getElementById('status').textContent = 'ready';
@@ -373,19 +422,8 @@ function wireTransport() {
 
   const togglePlay = async () => {
     await initPromise; // in case RUN is hit while modules are still loading
-    if (ctx.state === 'suspended') await ctx.resume(); // first gesture unlocks audio
-    dismissNudge();
-    if (scheduler.playing) {
-      scheduler.stop();
-      playBtn.textContent = 'RUN';
-      playBtn.setAttribute('aria-pressed', 'false');
-      document.getElementById('status').textContent = 'ready';
-    } else {
-      scheduler.start();
-      playBtn.textContent = 'STOP';
-      playBtn.setAttribute('aria-pressed', 'true');
-      document.getElementById('status').textContent = 'running';
-    }
+    if (scheduler.playing) stopTransport();
+    else await startTransport();
   };
   playBtn.addEventListener('click', togglePlay);
 
@@ -405,16 +443,11 @@ function wireTransport() {
     const idx = demoSelect.value;
     demoSelect.value = '';
     if (idx === '') return;
-    const demo = DEMO_LIBRARY[parseInt(idx, 10)];
-    if (!window.confirm(`Load the “${demo.name}” demo? This replaces your current rig.`)) return;
-    loadRigState(buildDemoState(demo));
+    loadDemo(DEMO_LIBRARY[parseInt(idx, 10)]);
   });
 
   // New Rig: one-click blank slate across all four machines.
-  document.getElementById('newRig').addEventListener('click', () => {
-    if (!window.confirm('Start a blank rig? This clears all your patterns.')) return;
-    loadRigState(buildBlankState());
-  });
+  document.getElementById('newRig').addEventListener('click', newRig);
 
   // Keyboard shortcuts. Ignore while typing in a field so pattern renaming and
   // repeat entry aren't hijacked.
@@ -447,7 +480,7 @@ function wireTransport() {
     if (!store.undo()) return;
     updateUndoButton();
     applyTransportUI();
-    if (ctx) buildConsole();
+    if (ctx) { buildConsole(); buildMixer(); }
   });
 
   document.getElementById('export').addEventListener('click', () => {
@@ -469,7 +502,7 @@ function wireTransport() {
       store.importJSON(await file.text());
       updateUndoButton();
       applyTransportUI();
-      if (ctx) buildConsole();
+      if (ctx) { buildConsole(); buildMixer(); }
     } catch (err) {
       alert(`Import failed: ${err.message}`);
     }

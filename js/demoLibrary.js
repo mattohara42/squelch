@@ -12,6 +12,7 @@
 import { CFG } from './config.js';
 import { LANE_ORDER_808 } from './presetsDrum.js';
 import { LANE_ORDER_909 } from './presetsDrum909.js';
+import { mergeMixerState, defaultMixerState } from './mixerState.js';
 
 // Local copy of the machine keys to avoid a circular import with store.js
 // (store.js imports this module for its seed).
@@ -69,6 +70,8 @@ export const DEMO_LIBRARY = [
   {
     name: 'Detroit House',
     tempo: 124, shuffle: 0, lead: '909', other: '808',
+    // Dotted delay on the chord stab; a touch of glue on the bus.
+    mixer: { channels: { '303b': { delay: true } }, delay: { steps: 6, feedback: 0.4, level: 0.45 }, comp: { amount: 0.3 } },
     build: () => ({
       patterns: {
         '303a': line303('303a', 'Deep Bass', [
@@ -98,6 +101,8 @@ export const DEMO_LIBRARY = [
   {
     name: 'Classic Hip Hop',
     tempo: 90, shuffle: 0.18, lead: '808', other: '909',
+    // Punchy and mostly dry; just bus glue to hold the boom-bap together.
+    mixer: { comp: { amount: 0.4 }, channels: { '303a': { level: 0.9 } } },
     build: () => ({
       patterns: {
         '303a': line303('303a', 'Sub Bass', [
@@ -127,6 +132,8 @@ export const DEMO_LIBRARY = [
   {
     name: 'Acid Techno',
     tempo: 135, shuffle: 0, lead: '909', other: '808',
+    // Distortion + delay on the screaming acid line (dist -> delay, serial).
+    mixer: { channels: { '303a': { dist: true, delay: true } }, dist: { amount: 0.5, blend: 0.7 }, delay: { steps: 4, feedback: 0.5, level: 0.4 }, comp: { amount: 0.3 } },
     build: () => ({
       patterns: {
         '303a': line303('303a', 'Screamer', [
@@ -156,6 +163,8 @@ export const DEMO_LIBRARY = [
   {
     name: 'Electro / Miami Bass',
     tempo: 110, shuffle: 0, lead: '808', other: '909',
+    // Long delay throws on the zap; light glue.
+    mixer: { channels: { '303b': { delay: true } }, delay: { steps: 8, feedback: 0.4, level: 0.42 }, comp: { amount: 0.3 } },
     build: () => ({
       patterns: {
         '303a': line303('303a', 'Funk Bass', [
@@ -200,6 +209,7 @@ export function buildDemoState(demo) {
     tempo: demo.tempo,
     shuffle: demo.shuffle || 0,
     patterns, active, patches,
+    mixer: mergeMixerState(demo.mixer),
     song: { rows: arrangement(built.patterns, demo.lead, demo.other), loop: true },
   };
 }
@@ -228,6 +238,7 @@ export function buildBlankState() {
     tempo: CFG.TEMPO_DEFAULT_BPM,
     shuffle: 0,
     patterns, active, patches: {},
+    mixer: defaultMixerState(),
     song: { rows: [{ pats: Object.fromEntries(MACHINE_KEYS.map((k) => [k, active[k]])), repeat: 1 }], loop: true },
   };
 }

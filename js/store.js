@@ -9,8 +9,15 @@
 // edits, and undoing a step toggle shouldn't yank the filter knob back.
 import { CFG } from './config.js';
 import { DEMO_LIBRARY, buildDemoState } from './demoLibrary.js';
+import { defaultMixerState } from './mixerState.js';
 
 export const MACHINE_KEYS = ['303a', '303b', '808', '909'];
+
+// Incremental edits snapshot only pattern data (undoing a step toggle must not
+// yank a filter sweep or tempo back — M6). A whole-rig swap (load demo, blank,
+// import) snapshots everything, so undo restores the entire prior rig.
+const EDIT_KEYS = ['patterns', 'active', 'song'];
+const RIG_KEYS = ['patterns', 'active', 'song', 'tempo', 'shuffle', 'patches', 'mixer'];
 
 // A brand-new profile opens on a full starter demo (immediate music), rather
 // than a blank rig — the "New Rig" button is the one-click path to blank.
@@ -39,6 +46,8 @@ function normalize(s) {
     };
   }
   if (s.song.loop == null) s.song.loop = true;
+  // Mixer backfill: older saves/exports predate persisted mixer state.
+  if (s.mixer == null) s.mixer = defaultMixerState();
   return s;
 }
 
@@ -53,8 +62,10 @@ export function createStore(storage) {
 
   const undoStack = [];
   const save = () => storage.setItem(CFG.STORAGE_KEY, JSON.stringify(state));
-  const pushUndo = () => {
-    undoStack.push(structuredClone({ patterns: state.patterns, active: state.active, song: state.song }));
+  const pushUndo = (keys = EDIT_KEYS) => {
+    const snap = {};
+    for (const k of keys) snap[k] = structuredClone(state[k]);
+    undoStack.push(snap);
     if (undoStack.length > CFG.UNDO_DEPTH) undoStack.shift();
   };
   save(); // ensure freshly-seeded state is persisted immediately
@@ -78,7 +89,7 @@ export function createStore(storage) {
     canUndo: () => undoStack.length > 0,
     undo() {
       if (!undoStack.length) return false;
-      Object.assign(state, undoStack.pop()); // patterns+active only; patches/transport stay current
+      Object.assign(state, undoStack.pop()); // restores exactly the keys snapshotted for this entry
       save();
       return true;
     },
@@ -86,17 +97,17 @@ export function createStore(storage) {
     importJSON(text) {
       const parsed = JSON.parse(text); // throws on malformed JSON
       if (!validate(parsed)) throw new Error('not a SQUELCH pattern file');
-      pushUndo();
+      pushUndo(RIG_KEYS); // whole-rig swap -> full-rig undo
       state = normalize(parsed);
       save();
     },
-    // Replace the whole rig (load a full demo, or the blank slate). Undoable
-    // like import — undo restores the previous patterns/active/song (tempo and
-    // patches follow import's semantics: they stay at the loaded values).
+    // Replace the whole rig (load a full demo, or the blank slate). Fully
+    // undoable: the RIG_KEYS snapshot restores patterns, tempo, patches, and
+    // mixer together, so one Undo puts the previous rig back exactly.
     loadRig(newState) {
       const norm = normalize(structuredClone(newState));
       if (!validate(norm)) throw new Error('invalid rig state');
-      pushUndo();
+      pushUndo(RIG_KEYS);
       state = norm;
       save();
     },

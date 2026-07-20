@@ -85,6 +85,40 @@ function fakeStorage() {
     console.log('PASS export/import roundtrip on a clean profile');
   }
 
+  // --- loadRig is a full-rig undo: tempo, patches, mixer AND patterns come back ---
+  {
+    const storage = fakeStorage();
+    const store = createStore(storage);
+    store.setNoUndo((s) => { s.tempo = 100; s.patches['303a'] = { cutoff: 777 }; s.mixer.channels['303a'].delay = true; });
+    const before = { tempo: store.getState().tempo, cutoff: store.getState().patches['303a'].cutoff, delay: store.getState().mixer.channels['303a'].delay };
+
+    store.loadRig({
+      version: 1, tempo: 150, shuffle: 0, patches: { '303a': { cutoff: 111 } },
+      mixer: undefined, // normalized to defaults (dist/delay off)
+      patterns: store.getState().patterns, active: store.getState().active, song: store.getState().song,
+    });
+    assert.strictEqual(store.getState().tempo, 150, 'loadRig applied new tempo');
+    assert.strictEqual(store.getState().mixer.channels['303a'].delay, false, 'loadRig reset mixer to defaults');
+
+    assert.ok(store.undo(), 'loadRig is undoable');
+    assert.strictEqual(store.getState().tempo, before.tempo, 'undo restored tempo');
+    assert.strictEqual(store.getState().patches['303a'].cutoff, before.cutoff, 'undo restored patches');
+    assert.strictEqual(store.getState().mixer.channels['303a'].delay, before.delay, 'undo restored mixer send');
+    console.log('PASS loadRig undo restores the whole prior rig');
+  }
+
+  // --- incremental edit undo still leaves tempo/patches/mixer untouched ---
+  {
+    const storage = fakeStorage();
+    const store = createStore(storage);
+    store.setNoUndo((s) => { s.tempo = 123; s.mixer.channels['808'].mute = true; });
+    store.edit((s) => { store.activePattern('303a').steps[0].n = 60; });
+    store.undo();
+    assert.strictEqual(store.getState().tempo, 123, 'edit-undo leaves tempo alone');
+    assert.strictEqual(store.getState().mixer.channels['808'].mute, true, 'edit-undo leaves mixer alone');
+    console.log('PASS incremental edit undo does not touch transport/mixer');
+  }
+
   // --- bad imports throw and leave state intact; corrupt storage falls back to seed ---
   {
     const storage = fakeStorage();
