@@ -188,6 +188,17 @@ See SPEC.md (design, locked), BUILD_PLAN.md (milestones), BACKLOG.md (deferred).
   (deliberate gesture) and announces via the status live region; New Rig lands
   in Pattern view, stopped. Dead PRESET_303A/B/808/909 snippets removed (seed
   comes from the demo library now); their files keep the lane/noteName exports.
+- (Post-M8 polish) Two follow-ups from the self-critique: (1) each demo's
+  non-lead drum machine now carries a real complementary layer, not a token rim
+  tick — Detroit House 808 = Shaker & Bell (maracas/cowbell/rim), Hip Hop 909 =
+  Swing Ride, Acid 808 = Rumble Perc, Electro 909 = Crash & Ride (still secondary
+  so they don't fight the lead kit). (2) An empty pattern shows a one-time
+  "click to add" hint centered over the grid (js/panel303.js + panelDrum.js:
+  shown when no step is gated/hit, removed on first pointerdown; pointer-events
+  none so clicks pass through; .grid-hint in CSS, pulse auto-disabled under
+  prefers-reduced-motion). Addresses New-Rig discoverability. All docs
+  (README/BUILD_PLAN/BACKLOG/SPEC) refreshed for the post-M8 work; ear-test
+  still owed for the demo grooves/mix.
 - (Post-M8) Mixer send routing made legible: the per-channel Dist/Delay LEDs
   are the sends into the shared Distortion/Delay FX boxes, but nothing showed
   that. Fixed presentation-only — two accent tokens (--fx-dist orange,

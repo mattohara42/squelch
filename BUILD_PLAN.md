@@ -119,3 +119,23 @@ Remaining (needs the user's machine/ears):
 - Accumulated ear-tests still open: M5 dub-acid wash / effects-off = dry,
   M4 909 cymbals, M7 row-transition feel, restored M5 303 articulation+slides,
   and "a kid can groove cold" (M7.5).
+
+## Post-M8 — UX, content & hosting (ongoing)
+Out-of-milestone work driven by user feedback. Design tensions were flagged and
+decisions recorded in CLAUDE.md's assumptions log; behavior is harness-tested,
+audible tuning still owes an ear pass.
+- **Learn panel** (`js/help.js`) — accessible modal: "How to play" quick-start +
+  "The machines" history, original SVG machine portraits, external links.
+- **Full-rig Demos + blank slate** (`js/demoLibrary.js`) — one-click genre tracks
+  (Detroit House / Classic Hip Hop / Acid Techno / Electro), each bundling tempo
+  + a pattern per machine + 303 patches + mixer sends + a song arrangement; a
+  fresh profile seeds from the first demo. **New Rig** = one-click blank slate.
+- **Mixer state persisted** (`js/mixerState.js`) + carried by demos; **full-rig
+  undo** — a whole-rig load/import restores in a single Undo (tempo, patches,
+  mixer, patterns), so no confirm prompts.
+- **Workflow clarity** — labeled `PATTERN | LOAD` pattern bar, New/Duplicate/
+  rename tooltips, and a dismissable "click to add" hint on empty grids.
+- **Mixer legibility** — Dist/Delay sends color-coded to their FX sections; a
+  layout fix so each channel's sends stay inside its own strip.
+- **GitHub Pages deploy** (`.github/workflows/pages.yml`) alongside Netlify.
+- New headless tests: `test/mixerState.test.js`, `test/demoLibrary.test.js`.

@@ -38,10 +38,10 @@ Deferred by decision, not forgotten. Nothing here gets built speculatively.
 - **Pattern delete / reorder** — M6 shipped select/rename/new/duplicate only;
   delete needs a "can't delete the last one" guard and a confirm. Add with the
   M7.5 UX pass.
-- **Mixer-settings persistence** — M6 persists patterns, machine patches
-  (incl. drum lane knobs), and tempo/shuffle. Mixer state (levels, routing
-  toggles, FX knobs, mutes) resets on refresh; persist it when the mixer
-  gets its M7.5-era polish, reusing store.patches-style setNoUndo plumbing.
+- ~~**Mixer-settings persistence**~~ Done (post-M8). Mixer state — per-channel
+  level + dist/delay sends + mute, and the shared dist/delay/comp/master — now
+  lives in `state.mixer` (js/mixerState.js), persisted via setNoUndo like
+  patches, and travels with full-rig demos. `normalize()` backfills old saves.
 
 ## Known smells / risks to watch
 - Scheduler and UI share the main thread — if knob-drag ever audibly jitters

@@ -17,6 +17,16 @@ python3 -m http.server 8080
 Press **RUN** (or the Space bar) to start. The whole rig is visible from the
 start — RUN only unlocks *sound* (browsers require a gesture before audio).
 
+## Deploy
+
+The site is static (no build step), so hosting is just serving the repo root:
+
+- **GitHub Pages** — `.github/workflows/pages.yml` publishes the repo root on
+  every push to `main` (it enables Pages on first run), at
+  `https://<owner>.github.io/squelch/`.
+- **Netlify** — `netlify.toml` publishes `.` as-is and pins `text/javascript`
+  for the worklet modules.
+
 ## The rig
 
 One instrument is on screen at a time; the tab bar (**303-A · 303-B · 808 ·
@@ -33,22 +43,37 @@ showing — the tab is an editing focus, not a mute.
   to focus it; its knobs (Level, Tone, Decay…) appear labeled in the inspector.
   Toggle step hits and per-step accents in the grid; the global Accent knob
   sets accent depth.
-- **Mixer** (docked, always visible) — per-machine Level fader, Dist / Delay
-  routing, and Mute; a shared FX chain of **Distortion → tempo-synced Delay →
-  Compressor → Master volume**.
+- **Mixer** (docked, always visible) — per-machine Level fader, **Dist / Delay**
+  sends (color-coded to their FX sections so the routing reads at a glance), and
+  Mute; a shared FX chain of **Distortion → tempo-synced Delay → Compressor →
+  Master volume**. The full mixer state is saved and travels with demos.
+
+### Starting a track
+
+- **Demo** picker (in the transport) — loads a whole track in one click: tempo,
+  a pattern on every machine, matching 303 sounds, the mixer's effect sends, and
+  a multi-section song arrangement. Lineup: **Detroit House, Classic Hip Hop,
+  Acid Techno, Electro / Miami Bass**. A fresh browser profile opens on the first
+  demo so there's music immediately.
+- **New Rig** — one click clears everything to a blank slate (empty patterns,
+  default sounds/tempo) to build from scratch. Empty grids show a "click to add"
+  hint until you make your first move.
+- Both are fully **undoable** — one Undo restores your entire previous rig
+  (patterns, tempo, sounds, and mixer), so neither needs a confirmation prompt.
 
 ### Patterns, songs, saving
 
-- Each machine keeps a named list of patterns (dropdown · rename · **New** ·
-  **Duplicate** · **Presets…** — a demo library of genre-flavored patterns;
-  the 303 presets also load a matching knob **patch**, so "Chicago Acid" or
-  "Screamer" dials in the sound, not just the notes).
+- Each machine keeps a named list of patterns: **Pattern** dropdown to switch ·
+  rename box · **New** (empty) · **Duplicate** (clone) · **Load ▸ Preset** — a
+  per-machine library of genre-flavored patterns (the 303 presets also load a
+  matching knob **patch**, so "Chicago Acid" or "Screamer" dials in the sound,
+  not just the notes).
 - **Pattern / Song** toggle (in the transport): Pattern mode jams the active
   patterns; Song mode is a row arranger (per-machine pattern refs + repeats,
   loop toggle).
-- Everything autosaves to `localStorage`. **Undo** covers pattern edits (knob
-  moves and tempo are performance gestures, not undone). **Export / Import**
-  round-trips the whole state as JSON.
+- Everything autosaves to `localStorage`. **Undo** covers pattern edits and
+  whole-rig loads; incremental knob/tempo moves are performance gestures, not
+  undone. **Export / Import** round-trips the whole state as JSON.
 
 ### Keyboard
 
@@ -76,7 +101,13 @@ for t in test/*.test.js; do node "$t"; done
 
 They cover the DSP (stability at worst-case knobs, accent RMS delta, slide
 glide), the scheduler cadence/shuffle, the pure sequencing/pitch/effects math,
-and the store (persistence, undo depth, export/import).
+the store (persistence, undo depth, full-rig vs incremental undo, export/import),
+and the demo / mixer-state builders (every demo and the blank rig build a valid,
+loadable state).
+
+> **Audible changes still need an ear-test pass on real hardware** (the Mac
+> mini) — the headless suite proves data validity and DSP stability, not that a
+> groove or mix *sounds* right. That's the final gate for anything you can hear.
 
 ### Layout
 
@@ -87,15 +118,17 @@ js/
   config.js           CFG — the single source of truth for tuning constants
   main.js             audio graph, console layout, wiring
   scheduler.js        lookahead clock (25ms tick / 120ms lookahead)
-  store.js            state, localStorage autosave, undo, export/import
+  store.js            state, localStorage autosave, undo, export/import, loadRig
+  demoLibrary.js      full-rig genre demos + blank-rig builder (seeds a fresh profile)
+  mixerState.js       mixer state slice: defaults + demo overlay merge
   panel303.js         303 piano-roll editor + inspector
   panelDrum.js        drum grid editor + inspector
-  panelMixer.js       mixer strip + FX
+  panelMixer.js       mixer strip + FX (reads/persists mixer state)
   panelSong.js        song row arranger
   patternBar.js       per-machine pattern list controls
   knob.js             rotary knob widget (drag, Shift = fine, dbl-click reset)
   seq303.js / pitch.js / effectsMath.js   pure logic (unit-tested)
-  presets*.js         seed patterns, lane maps, preset library
+  presets*.js         lane maps/labels/knobs + per-machine preset library
   worklets/           voice303, drum808, drum909, dsp-utils
 ```
 
