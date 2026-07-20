@@ -67,8 +67,8 @@ export function createMixerPanel(container, { machines, distStages, delayNode, d
 
     let distOn = false;
     let delayOn = false;
-    createLedToggle(toggleRow, { label: 'Dist', ariaLabel: `${m.label} distortion`, onChange: (on) => { distOn = on; m.setRouting(distOn, delayOn); } });
-    createLedToggle(toggleRow, { label: 'Delay', ariaLabel: `${m.label} delay`, onChange: (on) => { delayOn = on; m.setRouting(distOn, delayOn); } });
+    createLedToggle(toggleRow, { label: 'Dist', className: 'send-dist', ariaLabel: `Send ${m.label} to distortion`, onChange: (on) => { distOn = on; m.setRouting(distOn, delayOn); } });
+    createLedToggle(toggleRow, { label: 'Delay', className: 'send-delay', ariaLabel: `Send ${m.label} to delay`, onChange: (on) => { delayOn = on; m.setRouting(distOn, delayOn); } });
     createLedToggle(toggleRow, {
       label: 'Mute', className: 'mute-led', ariaLabel: `Mute ${m.label}`,
       onChange: (on) => m.muteGain.gain.setTargetAtTime(on ? 0 : 1, actx.currentTime, CFG.MUTE_RAMP_S),
@@ -80,10 +80,14 @@ export function createMixerPanel(container, { machines, distStages, delayNode, d
   fx.className = 'mixer-fx';
   strip.appendChild(fx);
 
-  const section = (label) => {
+  // `accent` ('dist' | 'delay') color-codes a send-FX section to the matching
+  // per-channel LED so the routing reads at a glance; `sub` captions where the
+  // section's input comes from (a channel send, or the always-on master bus).
+  const section = (label, { accent = '', sub = '' } = {}) => {
     const s = document.createElement('div');
-    s.className = 'mixer-fx-section';
-    s.innerHTML = `<div class="mixer-fx-label">${label}</div>`;
+    s.className = `mixer-fx-section${accent ? ` fx-${accent}` : ''}`;
+    s.innerHTML = `<div class="mixer-fx-label">${label}</div>` +
+      (sub ? `<div class="mixer-fx-sub" aria-hidden="true">${sub}</div>` : '');
     fx.appendChild(s);
     const knobs = document.createElement('div');
     knobs.className = 'knob-row';
@@ -93,7 +97,7 @@ export function createMixerPanel(container, { machines, distStages, delayNode, d
 
   // Distortion: one set of knobs drives both stages (they are the same
   // pedal — two instances exist only so dist-only channels bypass the delay).
-  const distKnobs = section('Distortion');
+  const distKnobs = section('Distortion', { accent: 'dist', sub: '◄ channel Dist sends' });
   const applyDistAmount = (v) => {
     const curve = makeDistortionCurve(v);
     for (const st of distStages) st.shaper.curve = curve;
@@ -113,7 +117,7 @@ export function createMixerPanel(container, { machines, distStages, delayNode, d
   applyDistBlend(CFG.EFFECTS.DISTORTION.BLEND_DEFAULT);
 
   // Delay.
-  const delayControls = section('Delay');
+  const delayControls = section('Delay', { accent: 'delay', sub: '◄ channel Delay sends' });
   let currentSteps = CFG.EFFECTS.DELAY.STEPS_DEFAULT;
   const applyDelayTime = () => smooth(delayNode.delayTime, delayTimeForSteps(getBpm(), currentSteps));
 
@@ -145,7 +149,7 @@ export function createMixerPanel(container, { machines, distStages, delayNode, d
   delayWet.gain.value = CFG.EFFECTS.DELAY.LEVEL_DEFAULT;
 
   // Compressor.
-  const compKnobs = section('Compressor');
+  const compKnobs = section('Compressor', { sub: 'master bus · all channels' });
   const C = CFG.EFFECTS.COMPRESSOR;
   createKnob(compKnobs, {
     label: 'Threshold', min: C.THRESHOLD_MIN_DB, max: C.THRESHOLD_MAX_DB, value: C.THRESHOLD_DEFAULT_DB,
