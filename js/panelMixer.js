@@ -16,14 +16,15 @@ function createFader(container, { label, ariaLabel, min, max, value, onChange })
   return input;
 }
 
-function createLedToggle(container, { label, ariaLabel, className = '', onChange }) {
+function createLedToggle(container, { label, ariaLabel, className = '', initial = false, onChange }) {
   const el = document.createElement('button');
   el.type = 'button';
   el.className = `led-toggle ${className}`.trim();
-  el.setAttribute('aria-pressed', 'false');
+  let on = !!initial;
+  el.classList.toggle('on', on);
+  el.setAttribute('aria-pressed', String(on));
   el.setAttribute('aria-label', ariaLabel || label);
   el.innerHTML = `<div class="led" aria-hidden="true"></div><div class="led-label" aria-hidden="true">${label}</div>`;
-  let on = false;
   el.addEventListener('click', () => {
     on = !on;
     el.classList.toggle('on', on);
@@ -34,11 +35,16 @@ function createLedToggle(container, { label, ariaLabel, className = '', onChange
   return el;
 }
 
-// machines: [{ label, muteGain, mixLevelGain, setRouting }] — the audio-graph
-// knowledge stays in main.js; this panel only renders controls and calls back.
-export function createMixerPanel(container, { machines, distStages, delayNode, delayFeedback, delayWet, glueCompressor, masterGain, getBpm }) {
+// machines: [{ key, label, muteGain, mixLevelGain, setRouting }]. `mixerState`
+// seeds every control's INITIAL value and is applied to the audio graph on
+// build (so a loaded demo's sends/levels take effect immediately); `persist(fn)`
+// writes a change back to the store's mixer slice. The panel is rebuilt from
+// scratch when the rig is replaced (demo/undo/import), so it always reflects the
+// stored mixer without needing a separate re-apply path.
+export function createMixerPanel(container, { machines, distStages, delayNode, delayFeedback, delayWet, glueCompressor, masterGain, getBpm, mixerState, persist }) {
   const actx = masterGain.context;
   const smooth = (param, v) => param.setTargetAtTime(v, actx.currentTime, SMOOTH_TC_S);
+  const ms = mixerState;
 
   const root = document.createElement('div');
   root.className = 'panelMixer';
@@ -51,28 +57,38 @@ export function createMixerPanel(container, { machines, distStages, delayNode, d
 
   // --- per-machine channel strips ---
   for (const m of machines) {
+    const cs = ms.channels[m.key];
     const ch = document.createElement('div');
     ch.className = 'mixer-channel';
     ch.innerHTML = `<div class="mixer-channel-label">${m.label}</div>`;
     strip.appendChild(ch);
 
     createFader(ch, {
-      label: 'Level', ariaLabel: `${m.label} level`, min: 0, max: 1, value: CFG.EFFECTS.MIXER_LEVEL_DEFAULT,
-      onChange: (v) => smooth(m.mixLevelGain.gain, v),
+      label: 'Level', ariaLabel: `${m.label} level`, min: 0, max: 1, value: cs.level,
+      onChange: (v) => { smooth(m.mixLevelGain.gain, v); persist((mx) => { mx.channels[m.key].level = v; }); },
     });
+    smooth(m.mixLevelGain.gain, cs.level); // apply initial level to the graph
 
     const toggleRow = document.createElement('div');
     toggleRow.className = 'mixer-toggles';
     ch.appendChild(toggleRow);
 
-    let distOn = false;
-    let delayOn = false;
-    createLedToggle(toggleRow, { label: 'Dist', className: 'send-dist', ariaLabel: `Send ${m.label} to distortion`, onChange: (on) => { distOn = on; m.setRouting(distOn, delayOn); } });
-    createLedToggle(toggleRow, { label: 'Delay', className: 'send-delay', ariaLabel: `Send ${m.label} to delay`, onChange: (on) => { delayOn = on; m.setRouting(distOn, delayOn); } });
+    let distOn = cs.dist;
+    let delayOn = cs.delay;
     createLedToggle(toggleRow, {
-      label: 'Mute', className: 'mute-led', ariaLabel: `Mute ${m.label}`,
-      onChange: (on) => m.muteGain.gain.setTargetAtTime(on ? 0 : 1, actx.currentTime, CFG.MUTE_RAMP_S),
+      label: 'Dist', className: 'send-dist', initial: distOn, ariaLabel: `Send ${m.label} to distortion`,
+      onChange: (on) => { distOn = on; m.setRouting(distOn, delayOn); persist((mx) => { mx.channels[m.key].dist = on; }); },
     });
+    createLedToggle(toggleRow, {
+      label: 'Delay', className: 'send-delay', initial: delayOn, ariaLabel: `Send ${m.label} to delay`,
+      onChange: (on) => { delayOn = on; m.setRouting(distOn, delayOn); persist((mx) => { mx.channels[m.key].delay = on; }); },
+    });
+    m.setRouting(distOn, delayOn); // apply initial send routing to the graph
+    createLedToggle(toggleRow, {
+      label: 'Mute', className: 'mute-led', initial: cs.mute, ariaLabel: `Mute ${m.label}`,
+      onChange: (on) => { m.muteGain.gain.setTargetAtTime(on ? 0 : 1, actx.currentTime, CFG.MUTE_RAMP_S); persist((mx) => { mx.channels[m.key].mute = on; }); },
+    });
+    if (cs.mute) m.muteGain.gain.value = 0; // apply initial mute
   }
 
   // --- shared FX section ---
@@ -106,19 +122,19 @@ export function createMixerPanel(container, { machines, distStages, delayNode, d
     for (const st of distStages) { smooth(st.wet.gain, v); smooth(st.dry.gain, 1 - v); }
   };
   createKnob(distKnobs, {
-    label: 'Amount', min: 0, max: 1, value: CFG.EFFECTS.DISTORTION.AMOUNT_DEFAULT,
-    onChange: applyDistAmount,
+    label: 'Amount', min: 0, max: 1, value: ms.dist.amount,
+    onChange: (v) => { applyDistAmount(v); persist((mx) => { mx.dist.amount = v; }); },
   });
   createKnob(distKnobs, {
-    label: 'Blend', min: 0, max: 1, value: CFG.EFFECTS.DISTORTION.BLEND_DEFAULT,
-    onChange: applyDistBlend,
+    label: 'Blend', min: 0, max: 1, value: ms.dist.blend,
+    onChange: (v) => { applyDistBlend(v); persist((mx) => { mx.dist.blend = v; }); },
   });
-  applyDistAmount(CFG.EFFECTS.DISTORTION.AMOUNT_DEFAULT);
-  applyDistBlend(CFG.EFFECTS.DISTORTION.BLEND_DEFAULT);
+  applyDistAmount(ms.dist.amount);
+  applyDistBlend(ms.dist.blend);
 
   // Delay.
   const delayControls = section('Delay', { accent: 'delay', sub: '◄ channel Delay sends' });
-  let currentSteps = CFG.EFFECTS.DELAY.STEPS_DEFAULT;
+  let currentSteps = ms.delay.steps;
   const applyDelayTime = () => smooth(delayNode.delayTime, delayTimeForSteps(getBpm(), currentSteps));
 
   const stepsWrap = document.createElement('div');
@@ -131,36 +147,40 @@ export function createMixerPanel(container, { machines, distStages, delayNode, d
     if (s === currentSteps) opt.selected = true;
     stepsSelect.appendChild(opt);
   }
-  stepsSelect.addEventListener('change', (e) => { currentSteps = parseInt(e.target.value, 10); applyDelayTime(); });
+  stepsSelect.addEventListener('change', (e) => {
+    currentSteps = parseInt(e.target.value, 10);
+    applyDelayTime();
+    persist((mx) => { mx.delay.steps = currentSteps; });
+  });
   stepsWrap.innerHTML = '<div class="knob-label">Steps</div>';
   stepsWrap.prepend(stepsSelect);
   delayControls.appendChild(stepsWrap);
   applyDelayTime();
 
   createKnob(delayControls, {
-    label: 'Feedback', min: 0, max: 1, value: CFG.EFFECTS.DELAY.FEEDBACK_DEFAULT,
-    onChange: (v) => smooth(delayFeedback.gain, v * CFG.EFFECTS.DELAY.FEEDBACK_MAX),
+    label: 'Feedback', min: 0, max: 1, value: ms.delay.feedback,
+    onChange: (v) => { smooth(delayFeedback.gain, v * CFG.EFFECTS.DELAY.FEEDBACK_MAX); persist((mx) => { mx.delay.feedback = v; }); },
   });
   createKnob(delayControls, {
-    label: 'Level', min: 0, max: 1, value: CFG.EFFECTS.DELAY.LEVEL_DEFAULT,
-    onChange: (v) => smooth(delayWet.gain, v),
+    label: 'Level', min: 0, max: 1, value: ms.delay.level,
+    onChange: (v) => { smooth(delayWet.gain, v); persist((mx) => { mx.delay.level = v; }); },
   });
-  delayFeedback.gain.value = CFG.EFFECTS.DELAY.FEEDBACK_DEFAULT * CFG.EFFECTS.DELAY.FEEDBACK_MAX;
-  delayWet.gain.value = CFG.EFFECTS.DELAY.LEVEL_DEFAULT;
+  delayFeedback.gain.value = ms.delay.feedback * CFG.EFFECTS.DELAY.FEEDBACK_MAX;
+  delayWet.gain.value = ms.delay.level;
 
   // Compressor.
   const compKnobs = section('Compressor', { sub: 'master bus · all channels' });
   const C = CFG.EFFECTS.COMPRESSOR;
   createKnob(compKnobs, {
-    label: 'Threshold', min: C.THRESHOLD_MIN_DB, max: C.THRESHOLD_MAX_DB, value: C.THRESHOLD_DEFAULT_DB,
-    onChange: (v) => smooth(glueCompressor.threshold, v),
+    label: 'Threshold', min: C.THRESHOLD_MIN_DB, max: C.THRESHOLD_MAX_DB, value: ms.comp.threshold,
+    onChange: (v) => { smooth(glueCompressor.threshold, v); persist((mx) => { mx.comp.threshold = v; }); },
   });
   createKnob(compKnobs, {
-    label: 'Amount', min: 0, max: 1, value: C.AMOUNT_DEFAULT,
-    onChange: (v) => smooth(glueCompressor.ratio, compressorRatioForAmount(v)),
+    label: 'Amount', min: 0, max: 1, value: ms.comp.amount,
+    onChange: (v) => { smooth(glueCompressor.ratio, compressorRatioForAmount(v)); persist((mx) => { mx.comp.amount = v; }); },
   });
-  glueCompressor.threshold.value = C.THRESHOLD_DEFAULT_DB;
-  glueCompressor.ratio.value = compressorRatioForAmount(C.AMOUNT_DEFAULT);
+  glueCompressor.threshold.value = ms.comp.threshold;
+  glueCompressor.ratio.value = compressorRatioForAmount(ms.comp.amount);
 
   // Master volume.
   const masterSection = document.createElement('div');
@@ -168,9 +188,10 @@ export function createMixerPanel(container, { machines, distStages, delayNode, d
   masterSection.innerHTML = '<div class="mixer-channel-label">Master</div>';
   fx.appendChild(masterSection);
   createFader(masterSection, {
-    label: 'Volume', ariaLabel: 'Master volume', min: 0, max: 1, value: CFG.MASTER_GAIN_DEFAULT,
-    onChange: (v) => smooth(masterGain.gain, v),
+    label: 'Volume', ariaLabel: 'Master volume', min: 0, max: 1, value: ms.master.volume,
+    onChange: (v) => { smooth(masterGain.gain, v); persist((mx) => { mx.master.volume = v; }); },
   });
+  smooth(masterGain.gain, ms.master.volume);
 
   return {
     updateDelayTimeForBpm() { applyDelayTime(); },

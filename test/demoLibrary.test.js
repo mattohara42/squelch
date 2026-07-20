@@ -45,8 +45,20 @@ function fakeStorage() {
     // Every demo populates a distinct 303 sound (patch) on both synths.
     assert.ok(state.patches['303a'] && state.patches['303a'].waveform, `${demo.name}: 303a patch present`);
     assert.ok(state.patches['303b'] && state.patches['303b'].waveform, `${demo.name}: 303b patch present`);
+    // Every demo carries a full mixer slice (its "sonic touches").
+    assert.ok(state.mixer && state.mixer.channels && state.mixer.channels['303a'], `${demo.name}: mixer present`);
   }
   console.log(`PASS ${DEMO_LIBRARY.length} demos build valid, loadable rig states`);
+
+  // At least one demo actually turns a send on — proves the sonic-touch wiring
+  // reaches the mixer, not just tempo/patches.
+  {
+    const acid = DEMO_LIBRARY.find((d) => d.name === 'Acid Techno');
+    const st = buildDemoState(acid);
+    assert.ok(st.mixer.channels['303a'].dist, 'Acid Techno sends 303a to distortion');
+    assert.ok(st.mixer.channels['303a'].delay, 'Acid Techno sends 303a to delay');
+    console.log('PASS demo mixer sends are wired (Acid Techno dist+delay on 303a)');
+  }
 
   // Blank rig: valid, empty, default tempo.
   const blank = buildBlankState();
