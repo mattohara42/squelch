@@ -151,8 +151,15 @@ See SPEC.md (design, locked), BUILD_PLAN.md (milestones), BACKLOG.md (deferred).
   transcriptions). presetLibrary entries are now { name, create() ->
   { pattern, patch } }; patternBar applies patch via setNoUndo (performance
   gesture) alongside the undoable pattern add.
-
-## Test habits
+- (Post-M8) Mixer send routing made legible: the per-channel Dist/Delay LEDs
+  are the sends into the shared Distortion/Delay FX boxes, but nothing showed
+  that. Fixed presentation-only — two accent tokens (--fx-dist orange,
+  --fx-delay cyan) color-code each send LED (ring+label, visible even when
+  off) to a matching top accent bar on its FX section, plus a "◄ channel Dist
+  sends" / "◄ channel Delay sends" caption. Compressor/Master are captioned
+  "master bus · all channels" to mark them as always-on, not sends. No
+  data-model/DSP/audio-graph change; the send LEDs keep the same
+  aria-pressed semantics (aria-labels now read "Send <machine> to ...").
 - Headless worklet harness (Node + stubbed AudioWorklet globals) lives in
   `test/`; run before shipping any DSP change: stability (NaN/peak at
   worst-case knobs), accent RMS delta, slide glide curve.

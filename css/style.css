@@ -13,6 +13,8 @@
   --ink-faint: #97979f; /* raised from #6d6d75 */
   --focus: #7cc4ff; /* keyboard focus ring — always visible regardless of --accent */
   --slot: #131315;
+  --fx-dist: #ff8a3d;  /* distortion send/section accent — links channel Dist LED to the Distortion box */
+  --fx-delay: #38c6ff; /* delay send/section accent — links channel Delay LED to the Delay box */
   --accent: #7cc4ff; /* default; machines override via --accent */
   --pad-off: linear-gradient(#303036, #26262b);
   --screw: radial-gradient(circle at 40% 40%, #6a6a72, #2a2a2e 70%);
@@ -302,6 +304,14 @@ input[type=range]::-moz-range-thumb {
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 3px 8px rgba(0,0,0,0.4);
 }
 .mixer-fx-label { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; color: var(--ink); }
+/* Caption under an FX label: where the section's signal comes from. */
+.mixer-fx-sub { font-size: 9px; letter-spacing: 0.04em; color: var(--ink-faint); margin-top: -6px; text-align: center; }
+/* Send-FX sections wear a top accent bar matching their per-channel LED, so a
+   glance ties the channel Dist/Delay toggles to these shared boxes. */
+.mixer-fx-section.fx-dist  { border-top: 3px solid var(--fx-dist); }
+.mixer-fx-section.fx-delay { border-top: 3px solid var(--fx-delay); }
+.mixer-fx-section.fx-dist  .mixer-fx-sub { color: var(--fx-dist); }
+.mixer-fx-section.fx-delay .mixer-fx-sub { color: var(--fx-delay); }
 .knob-row { display: flex; gap: 18px; align-items: flex-end; }
 
 /* Rotary knob. */
@@ -376,6 +386,16 @@ input[type=range]::-moz-range-thumb {
 .led-toggle.mute-led .led { background: #3a2a08; border-color: #120c02; }
 .led-toggle.mute-led.on .led { background: #ffaa22; box-shadow: 0 0 9px 2px #ffaa22, inset 0 0 2px rgba(255,255,255,0.7); }
 .led-toggle .led-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-dim); }
+
+/* Send LEDs are color-coded to their shared FX section (see --fx-dist /
+   --fx-delay). The tint shows even when off — a colored ring + label — so the
+   channel→effect routing reads without having to switch the send on. */
+.led-toggle.send-dist .led  { border-color: var(--fx-dist); box-shadow: inset 0 0 3px rgba(0,0,0,0.9), 0 0 0 1px rgba(255,138,61,0.35); }
+.led-toggle.send-delay .led { border-color: var(--fx-delay); box-shadow: inset 0 0 3px rgba(0,0,0,0.9), 0 0 0 1px rgba(56,198,255,0.35); }
+.led-toggle.send-dist.on .led  { background: var(--fx-dist);  box-shadow: 0 0 9px 2px var(--fx-dist),  inset 0 0 2px rgba(255,255,255,0.7); }
+.led-toggle.send-delay.on .led { background: var(--fx-delay); box-shadow: 0 0 9px 2px var(--fx-delay), inset 0 0 2px rgba(255,255,255,0.7); }
+.led-toggle.send-dist .led-label  { color: var(--fx-dist); }
+.led-toggle.send-delay .led-label { color: var(--fx-delay); }
 
 /* ---- First-run nudge ---- */
 #nudge {
