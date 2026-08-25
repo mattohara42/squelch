@@ -212,3 +212,7 @@ See SPEC.md (design, locked), BUILD_PLAN.md (milestones), BACKLOG.md (deferred).
   `test/`; run before shipping any DSP change: stability (NaN/peak at
   worst-case knobs), accent RMS delta, slide glide curve.
 - Ear tests on the Mac mini are the final gate for anything audible.
+
+## Notes from Trackerator
+
+- 2026-08-25: Add a Description to GitHub
