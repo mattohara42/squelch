@@ -2,6 +2,20 @@
 
 Deferred by decision, not forgotten. Nothing here gets built speculatively.
 
+## ⚠️ Branch cleanup pending (from the 2026-08-31 audit)
+
+This repo came out of a cross-repo branch audit **clean** — no unmerged work,
+no open PRs. One stale ref to delete: `claude/github-pages-link-bo7fxz` is a
+squash-merged leftover whose content is already in `main`.
+
+```
+git push origin --delete claude/github-pages-link-bo7fxz   # was 0ab086f
+```
+
+Reversible: `git push origin 0ab086f:refs/heads/claude/github-pages-link-bo7fxz`.
+Enabling **Settings → General → "Automatically delete head branches"** stops
+these accumulating.
+
 ## Deferred features
 - **PCF (pattern-controlled filter)** — ReBirth's signature effect; real
   complexity. Revisit after M8.
