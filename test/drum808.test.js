@@ -92,6 +92,27 @@ const ALL_LANES = ['bd', 'sd', 'lt', 'mt', 'ht', 'rs', 'cp', 'cb', 'ch', 'oh', '
     console.log('PASS all 12 lanes produce audible output when hit');
   }
 
+  // --- the kick's decay knob (0..1) sets a real decay, not a click ---
+  // Regression: the knob value was once read as milliseconds, so the
+  // panel's default 0.5 gave a 0.5 ms decay.
+  {
+    const ringMs = async (decay) => {
+      const Drum = await loadDrum808();
+      const v = new Drum();
+      hit(v, 'bd', false, { tone: 0.5, decay, level: 0.8 });
+      const samples = runBlocks(v, 1, 1600); // 4.3 s, past the longest ring
+      let last = 0;
+      samples.forEach((x, i) => { if (Math.abs(x) > 0.01) last = i; });
+      return (last / SAMPLE_RATE) * 1000;
+    };
+    const short = await ringMs(0);
+    const mid = await ringMs(0.5);
+    const long = await ringMs(1);
+    assert.ok(mid > 100, `decay 0.5 rings for more than 100 ms (got ${mid.toFixed(1)} ms)`);
+    assert.ok(short < mid && mid < long, `decay knob orders the ring time (${short.toFixed(0)} < ${mid.toFixed(0)} < ${long.toFixed(0)} ms)`);
+    console.log(`PASS kick decay knob: 0 -> ${short.toFixed(0)} ms, 0.5 -> ${mid.toFixed(0)} ms, 1 -> ${long.toFixed(0)} ms`);
+  }
+
   // --- stop flushes lookahead-queued hits ---
   {
     const Drum = await loadDrum808();
