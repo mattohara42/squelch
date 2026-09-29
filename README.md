@@ -158,3 +158,7 @@ Developed and tested on Chromium. The AudioWorklet processors use ES-module
 **should be verified on Safari**, whose AudioWorklet module-import support has
 lagged — if it fails there, the fix is to inline the constants those worklets
 need (avoiding a build step). Desktop / mouse only by design.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
