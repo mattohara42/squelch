@@ -14,7 +14,11 @@ const LANES = {
   bd: {
     trigger(s, p) {
       s.env = 1; s.pitchEnv = 1; s.phase = 0;
-      s.decayMult = expMult(p.decay != null ? p.decay : L.bd.decayDefaultMs);
+      // The decay knob is 0..1 like every other knob (panelDrum.js), so map
+      // it onto decayMinMs..decayMaxMs as oh/cy and drum909's kick do.
+      // Passing it straight through read 0.5 as 0.5 ms: a click, not a kick.
+      const decayMs = p.decay != null ? L.bd.decayMinMs + p.decay * (L.bd.decayMaxMs - L.bd.decayMinMs) : L.bd.decayDefaultMs;
+      s.decayMult = expMult(decayMs);
       s.pitchMult = expMult(L.bd.pitchTauMs);
       s.tone = p.tone != null ? p.tone : L.bd.toneDefault;
     },
